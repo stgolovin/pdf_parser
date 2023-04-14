@@ -1,15 +1,11 @@
-from pdfrw import PdfReader
-import pdfplumber
 import pdfreader
+from pdfreader import PDFDocument, SimplePDFViewer
+
 import psycopg2
 import sqlalchemy as sqla
 from sqlalchemy.orm import sessionmaker
-from models import create_table, Years
-from pdfreader import PDFDocument, SimplePDFViewer
-from itertools import islice
-from PIL import Image
-from pprint import pprint
 
+from models import create_table, Years
 
 pdf_path = './test.pdf'
 LOGIN = 'postgres'
@@ -22,43 +18,29 @@ create_table(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
 
-def pdfreader():
+
+def read_pdf():
     fd = open('./test.pdf', "rb")
     viewer = SimplePDFViewer(fd)
     viewer.navigate(1)
     viewer.render()
     markdown = viewer.canvas.text_content
-    # print(markdown)
-    engine_num = markdown.split('(Год изготовления)', 1)[1].split('(', 1)[1].split(')', 1)[0]
-    print(engine_num)
+    created_at = markdown.split("(Год изготовления)", 1)[1].split('(', 1)[1].split(')', 1)[0]
+    color = markdown.split("(Цвет кузова \(кабины, прицепа\))", 1)[1].split('(', 1)[1].split(')', 1)[0]
+    print("The year is %s. The color is %s." % (created_at, color))
 
 
 def db():
     session.add(Years(id=1, text='2018'))
     session.commit()
+    subq = session.query(Years)
+    print(subq)
+    session.close()
 
-subq = session.query(Years).subquery()
-print(Years)
-
-session.close()
-
-def pdfrw_test():
-    x = PdfReader(pdf_path)
-    print('Size of the file is {}'.format(len(x.pages)))
-
-
-def pdfplumber_test():
-    with pdfplumber .open(pdf_path) as pdf:
-        page = pdf.pages[2]
-        tables = page.extract_tables()
-        text = page.extract_text()
-        print(text)
 
 def main():
-    # pdfrw_test()
-    # pdfplumber_test()
-    # pdfreader()
-    db()
+    read_pdf()
+    # db()
 
 
 if __name__ == "__main__":
